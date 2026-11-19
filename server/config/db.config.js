@@ -1,44 +1,61 @@
+
 import mongoose from "mongoose";
 import { env } from "../config/env.config.js";
 
-let cached = global.mongoose;
+let cached = globalThis.mongoose;
 
 if (!cached) {
-  cached = global.mongoose = {
+  cached = globalThis.mongoose = {
     conn: null,
     promise: null,
   };
 }
 
 export const connectDB = async () => {
-  // Check for MONGO_URI when connecting, not at module load
-  const MONGO_URI = env.mongo_uri;
+  const MONGO_URL = env.mongo_uri;
 
-  if (!MONGO_URI) {
+  if (!MONGO_URL) {
     throw new Error(
-      "MongoDB connection URI is not defined in environment variables. Please set MONGO_URI in your environment.",
+      "MongoDB connection URL is missing. Please configure MONGO_URL in your environment variables."
     );
   }
 
-  if (cached.conn) return cached.conn;
+  // Reuse existing database connection
+  if (cached.conn) {
+    return cached.conn;
+  }
 
+  // Create connection only once
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGO_URI, {
-      bufferCommands: false,
-    });
+    cached.promise = mongoose
+      .connect(MONGO_URL, {
+        bufferCommands: false,
+      })
+      .then((mongooseInstance) => {
+        console.log("MongoDB Connected Successfully");
+        return mongooseInstance;
+      })
+      .catch((error) => {
+        cached.promise = null;
+        console.error("MongoDB Connection Failed:", error.message);
+        throw error;
+      });
   }
 
   cached.conn = await cached.promise;
-  console.log("MongoDB Connected");
   return cached.conn;
 };
 
 export const disconnectDB = async () => {
   try {
     await mongoose.disconnect();
-    console.log("Disconnected from MongoDB");
+
+    cached.conn = null;
+    cached.promise = null;
+
+    console.log("Disconnected from MongoDB Successfully");
   } catch (error) {
-    console.log("Error disconnecting from MongoDB", error);
-    process.exit(1);
+    console.error("Error disconnecting from MongoDB:", error.message);
+    throw error;
   }
 };
