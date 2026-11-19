@@ -1,0 +1,17 @@
+{
+  "name": "auctionx",
+  "version": "2.1.0",
+  "private": true,
+  "description": "AuctionX full-stack real-time auction marketplace (MERN + Socket.IO)",
+  "author": "Nitesh Yadav",
+  "license": "MIT",
+  "scripts": {
+    "install:all": "npm install --prefix client && npm install --prefix server",
+    "dev": "npm run dev --prefix client",
+    "dev:server": "npm run dev --prefix server",
+    "build": "npm run build --prefix client",
+    "lint": "npm run lint --prefix client",
+    "test": "npm test --prefix server",
+    "start": "npm start --prefix server"
+  }
+}
